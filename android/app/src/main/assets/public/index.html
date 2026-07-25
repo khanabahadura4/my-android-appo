@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>দেনা-পাওনার খাতা | Debt & Credit Tracker</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📒</text></svg>">
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- PIN Lock Screen Overlay -->
+  <div id="pin-lock-screen" class="pin-screen hidden">
+    <div class="pin-container">
+      <div class="pin-avatar">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 id="pin-title">অ্যাপ লক করা আছে</h2>
+      <p id="pin-sub">আপনার গোপনীয়তার জন্য ৪-সংখ্যার পিন দিন</p>
+      <div class="pin-dots">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+      <div class="pin-keypad">
+        <button onclick="pressPin('1')">1</button>
+        <button onclick="pressPin('2')">2</button>
+        <button onclick="pressPin('3')">3</button>
+        <button onclick="pressPin('4')">4</button>
+        <button onclick="pressPin('5')">5</button>
+        <button onclick="pressPin('6')">6</button>
+        <button onclick="pressPin('7')">7</button>
+        <button onclick="pressPin('8')">8</button>
+        <button onclick="pressPin('9')">9</button>
+        <button onclick="clearPin()"><i class="fa-solid fa-rotate-left"></i></button>
+        <button onclick="pressPin('0')">0</button>
+        <button onclick="backspacePin()"><i class="fa-solid fa-backspace"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Wrapper -->
+  <div class="app-shell">
+    <!-- Top Header Navigation -->
+    <header class="app-header">
+      <div class="user-brand">
+        <div class="app-logo">
+          <i class="fa-solid fa-book-bookmark"></i>
+        </div>
+        <div>
+          <h1 class="app-title" data-i18n="app_title">দেনা-পাওনার খাতা</h1>
+          <p class="app-subtitle" id="current-date-str">জুলাই ২৫, ২০২৬</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="lang-toggle-btn" title="ভাষা পরিবর্তন">
+          <span class="lang-badge">BN</span>
+        </button>
+        <button class="icon-btn" id="theme-toggle-btn" title="থিম পরিবর্তন">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Content -->
+    <main class="app-main">
+      
+      <!-- TAB 1: HOME DASHBOARD -->
+      <section id="tab-home" class="tab-content active">
+        <!-- Summary Cards Grid -->
+        <div class="summary-cards">
+          <!-- Total Receivable Card -->
+          <div class="summary-card card-give">
+            <div class="card-top">
+              <div class="card-icon">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+              <span class="card-tag" data-i18n="tag_receivable">আমি পাবো</span>
+            </div>
+            <div class="card-amount" id="total-receivable">৳ 0</div>
+            <div class="card-foot" id="receivable-count">০ জন ব্যক্তির কাছে</div>
+          </div>
+
+          <!-- Total Payable Card -->
+          <div class="summary-card card-take">
+            <div class="card-top">
+              <div class="card-icon">
+                <i class="fa-solid fa-arrow-down-left-and-arrow-up-right-to-inside"></i>
+              </div>
+              <span class="card-tag" data-i18n="tag_payable">দিতে হবে</span>
+            </div>
+            <div class="card-amount" id="total-payable">৳ 0</div>
+            <div class="card-foot" id="payable-count">০ জন ব্যক্তির কাছে</div>
+          </div>
+
+          <!-- Net Balance Card -->
+          <div class="summary-card card-net span-2">
+            <div class="card-net-content">
+              <div>
+                <span class="card-label" data-i18n="label_net_balance">সর্বমোট নিট ব্যালেন্স</span>
+                <div class="card-amount net-value" id="net-balance">৳ 0</div>
+              </div>
+              <div class="net-status-badge" id="net-status-badge">
+                <i class="fa-solid fa-scale-balanced"></i> সমতা
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overdue Alerts Bar (If Any) -->
+        <div id="overdue-banner" class="alert-banner hidden">
+          <div class="alert-icon"><i class="fa-solid fa-bell-ring"></i></div>
+          <div class="alert-text">
+            <strong id="overdue-count-text">২টি পাওনার সময় পেরিয়ে গেছে!</strong>
+            <span data-i18n="overdue_sub">দ্রুত তাগাদা দিন অথবা তারিখ আপডেট করুন।</span>
+          </div>
+          <button class="btn-sm alert-btn" onclick="switchTab('contacts')">দেখুন</button>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="search-filter-section">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="home-search-input" placeholder="মানুষের নাম বা নোট খুঁজুন..." data-i18n-ph="search_placeholder">
+          </div>
+          <div class="filter-chips">
+            <button class="chip active" data-filter="all" onclick="filterTransactions('all', this)" data-i18n="filter_all">সব</button>
+            <button class="chip chip-give" data-filter="give" onclick="filterTransactions('give', this)" data-i18n="filter_give">পাবো</button>
+            <button class="chip chip-take" data-filter="take" onclick="filterTransactions('take', this)" data-i18n="filter_take">দেনা</button>
+            <button class="chip chip-pending" data-filter="pending" onclick="filterTransactions('pending', this)" data-i18n="filter_pending">বাকি</button>
+          </div>
+        </div>
+
+        <!-- Transactions History Header -->
+        <div class="section-header">
+          <h2 data-i18n="recent_activity">সাম্প্রতিক লেনদেন</h2>
+          <button class="link-btn" onclick="openAddModal()" data-i18n="btn_add">+ নতুন</button>
+        </div>
+
+        <!-- Transactions List -->
+        <div id="transaction-list" class="transaction-list">
+          <!-- JS will render item cards here -->
+        </div>
+      </section>
+
+      <!-- TAB 2: CONTACTS LEDGER (খাতা) -->
+      <section id="tab-contacts" class="tab-content">
+        <div class="section-header">
+          <h2 data-i18n="contacts_title">মানুষের খাতা (Person Ledger)</h2>
+          <button class="btn-primary-sm" onclick="openContactModal()">
+            <i class="fa-solid fa-user-plus"></i> <span data-i18n="add_person">নতুন নাম</span>
+          </button>
+        </div>
+
+        <!-- Search Contact -->
+        <div class="search-box mb-3">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="contact-search-input" placeholder="খাতায় নাম খুঁজুন..." oninput="renderContacts()">
+        </div>
+
+        <!-- Contacts Grid / List -->
+        <div id="contacts-list" class="contacts-grid">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- TAB 3: REPORTS & ANALYTICS -->
+      <section id="tab-reports" class="tab-content">
+        <div class="section-header">
+          <h2 data-i18n="reports_title">হিসাব-নিকাশ ও সামারি</h2>
+          <button class="icon-btn" onclick="exportCSVStatement()" title="CSV রিপোর্ট ডাউনলোড">
+            <i class="fa-solid fa-file-csv"></i>
+          </button>
+        </div>
+
+        <!-- Overview Report Card -->
+        <div class="analytics-card mb-3">
+          <h3><i class="fa-solid fa-chart-pie"></i> <span data-i18n="chart_summary">দেনা ও পাওনার অনুপাত</span></h3>
+          <div class="chart-container">
+            <div class="bar-chart-visual">
+              <div class="bar-group">
+                <div class="bar-label" data-i18n="tag_receivable">পাবো</div>
+                <div class="bar-track">
+                  <div class="bar-fill fill-give" id="chart-bar-give" style="width: 50%;"></div>
+                </div>
+                <div class="bar-value" id="chart-val-give">৳ 0</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-label" data-i18n="tag_payable">দেনা</div>
+                <div class="bar-track">
+                  <div class="bar-fill fill-take" id="chart-bar-take" style="width: 50%;"></div>
+                </div>
+                <div class="bar-value" id="chart-val-take">৳ 0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Breakdown Card -->
+        <div class="analytics-card mb-3">
+          <h3><i class="fa-solid fa-tags"></i> <span data-i18n="category_breakdown">ক্যাটাগরি ভিত্তিক লেনদেন</span></h3>
+          <div id="category-list" class="category-breakdown-list">
+            <!-- JS populated -->
+          </div>
+        </div>
+
+        <!-- Top Debtors Card -->
+        <div class="analytics-card mb-3">
+          <h3><i class="fa-solid fa-crown"></i> <span data-i18n="top_borrowers">কাদের কাছে সবচেয়ে বেশি পাওনা</span></h3>
+          <div id="top-debtors-list" class="top-list">
+            <!-- JS populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SETTINGS & BACKUP -->
+      <section id="tab-settings" class="tab-content">
+        <div class="section-header">
+          <h2 data-i18n="settings_title">অ্যাপ সেটিংস ও ব্যাকআপ</h2>
+        </div>
+
+        <div class="settings-group">
+          <!-- Currency & Preferences -->
+          <div class="setting-item">
+            <div class="setting-icon"><i class="fa-solid fa-coins"></i></div>
+            <div class="setting-info">
+              <strong data-i18n="setting_currency">মুদ্রা চিহ্ন (Currency Symbol)</strong>
+              <small data-i18n="setting_currency_sub">টাকা, ডলার বা রুপি নির্বাচন করুন</small>
+            </div>
+            <select id="currency-select" class="custom-select" onchange="updateCurrency(this.value)">
+              <option value="৳">৳ (BDT)</option>
+              <option value="$">$ (USD)</option>
+              <option value="₹">₹ (INR)</option>
+              <option value="€">€ (EUR)</option>
+              <option value="SR">SR (SAR)</option>
+            </select>
+          </div>
+
+          <!-- PIN Security Lock -->
+          <div class="setting-item">
+            <div class="setting-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="setting-info">
+              <strong data-i18n="setting_pin">পিন পাসকোড নিরাপত্তা</strong>
+              <small data-i18n="setting_pin_sub">অ্যাপ খুলতে পিন কোড সেট করুন</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="pin-lock-toggle" onchange="togglePinSecurity(this.checked)">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <!-- App Language -->
+          <div class="setting-item">
+            <div class="setting-icon"><i class="fa-solid fa-language"></i></div>
+            <div class="setting-info">
+              <strong data-i18n="setting_lang">ভাষা (Language)</strong>
+              <small data-i18n="setting_lang_sub">বাংলা / English</small>
+            </div>
+            <button class="btn-secondary-sm" onclick="toggleLanguage()">
+              <span id="lang-setting-label">English</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <!-- Export Backup JSON -->
+          <div class="setting-item clickable" onclick="exportDataJSON()">
+            <div class="setting-icon icon-blue"><i class="fa-solid fa-download"></i></div>
+            <div class="setting-info">
+              <strong data-i18n="setting_export">ব্যাকআপ নামান (Export JSON)</strong>
+              <small data-i18n="setting_export_sub">সকল লেনদেনের ব্যাকআপ ফাইল সংরক্ষণ করুন</small>
+            </div>
+            <i class="fa-solid fa-chevron-right text-muted"></i>
+          </div>
+
+          <!-- Import Backup JSON -->
+          <div class="setting-item clickable" onclick="document.getElementById('import-file-input').click()">
+            <div class="setting-icon icon-green"><i class="fa-solid fa-upload"></i></div>
+            <div class="setting-info">
+              <strong data-i18n="setting_import">ব্যাকআপ রিস্টোর (Import JSON)</strong>
+              <small data-i18n="setting_import_sub">সংরক্ষিত ব্যাকআপ ফাইল থেকে ডাটা ফিরিয়ে আনুন</small>
+            </div>
+            <input type="file" id="import-file-input" accept=".json" class="hidden" onchange="importDataJSON(event)">
+            <i class="fa-solid fa-chevron-right text-muted"></i>
+          </div>
+
+          <!-- Load Demo Data -->
+          <div class="setting-item clickable" onclick="loadDemoData()">
+            <div class="setting-icon icon-purple"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="setting-info">
+              <strong data-i18n="setting_demo">ডেমো ডাটা লোড করুন</strong>
+              <small data-i18n="setting_demo_sub">পরীক্ষা করার জন্য নমুনা তথ্য যোগ করুন</small>
+            </div>
+            <i class="fa-solid fa-chevron-right text-muted"></i>
+          </div>
+
+          <!-- Clear All Data -->
+          <div class="setting-item clickable" onclick="confirmResetData()">
+            <div class="setting-icon icon-red"><i class="fa-solid fa-trash-can"></i></div>
+            <div class="setting-info text-danger">
+              <strong data-i18n="setting_clear">সব ডাটা মুছে ফেলুন</strong>
+              <small data-i18n="setting_clear_sub">মেমোরি সম্পূর্ণ খালি করুন</small>
+            </div>
+            <i class="fa-solid fa-chevron-right text-danger"></i>
+          </div>
+        </div>
+
+        <div class="app-version-footer">
+          <i class="fa-solid fa-mobile-screen-button"></i> দেনা-পাওনার খাতা v1.0.0 (Android Ready)
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="switchTab('home')" id="nav-home">
+        <i class="fa-solid fa-house"></i>
+        <span data-i18n="nav_home">হোম</span>
+      </button>
+
+      <button class="nav-item" onclick="switchTab('contacts')" id="nav-contacts">
+        <i class="fa-solid fa-address-book"></i>
+        <span data-i18n="nav_contacts">খাতা</span>
+      </button>
+
+      <!-- Floating Action Button for New Entry -->
+      <div class="fab-container">
+        <button class="fab-btn" onclick="openAddModal()" title="নতুন লেনদেন">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+
+      <button class="nav-item" onclick="switchTab('reports')" id="nav-reports">
+        <i class="fa-solid fa-chart-column"></i>
+        <span data-i18n="nav_reports">রিপোর্ট</span>
+      </button>
+
+      <button class="nav-item" onclick="switchTab('settings')" id="nav-settings">
+        <i class="fa-solid fa-gear"></i>
+        <span data-i18n="nav_settings">সেটিংস</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODAL 1: ADD / EDIT TRANSACTION -->
+  <div id="transaction-modal" class="modal-overlay hidden">
+    <div class="modal-drawer">
+      <div class="modal-header">
+        <h3 id="modal-title" data-i18n="modal_new_tx">নতুন লেনদেন যোগ করুন</h3>
+        <button class="modal-close" onclick="closeAddModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="tx-form" onsubmit="handleSaveTransaction(event)">
+        <!-- Transaction Type Toggle (Dilam vs Nilam) -->
+        <div class="type-toggle-container">
+          <label class="type-btn type-give active">
+            <input type="radio" name="txType" value="give" checked onchange="updateTypeToggle('give')">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+            <span data-i18n="type_dilam">আমি দিয়েছি (পাবো)</span>
+          </label>
+          <label class="type-btn type-take">
+            <input type="radio" name="txType" value="take" onchange="updateTypeToggle('take')">
+            <i class="fa-solid fa-hand-holding-hand"></i>
+            <span data-i18n="type_nilam">আমি নিয়েছি (দেনা)</span>
+          </label>
+        </div>
+
+        <!-- Contact Person Selection / New Contact Input -->
+        <div class="form-group">
+          <label data-i18n="form_person">ব্যক্তির নাম *</label>
+          <div class="input-with-datalist">
+            <input type="text" id="tx-person-name" required placeholder="কার সাথে লেনদেন? (যেমন: রহিম ভাই)" list="contacts-datalist">
+            <datalist id="contacts-datalist">
+              <!-- JS populated -->
+            </datalist>
+          </div>
+        </div>
+
+        <!-- Amount Input with Presets -->
+        <div class="form-group">
+          <label data-i18n="form_amount">টাকার পরিমাণ (৳) *</label>
+          <div class="amount-input-wrapper">
+            <span class="currency-symbol" id="form-currency-symbol">৳</span>
+            <input type="number" id="tx-amount" min="1" required placeholder="0.00">
+          </div>
+          <div class="amount-presets">
+            <button type="button" onclick="addPresetAmount(100)">+১০০</button>
+            <button type="button" onclick="addPresetAmount(500)">+৫০০</button>
+            <button type="button" onclick="addPresetAmount(1000)">+১,০০০</button>
+            <button type="button" onclick="addPresetAmount(5000)">+৫,০০০</button>
+          </div>
+        </div>
+
+        <!-- Date & Due Return Date -->
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="form_date">লেনদেনের তারিখ</label>
+            <input type="date" id="tx-date" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="form_due">ফেরতের মেয়াদ (ঐচ্ছিক)</label>
+            <input type="date" id="tx-due-date">
+          </div>
+        </div>
+
+        <!-- Category & Phone Number -->
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="form_category">ক্যাটাগরি</label>
+            <select id="tx-category" class="custom-select">
+              <option value="Personal">ব্যক্তিগত (Personal)</option>
+              <option value="Business">ব্যবসা (Business)</option>
+              <option value="Emergency">জরুরি (Emergency)</option>
+              <option value="Shopping">কেনাকাটা (Shopping)</option>
+              <option value="Bill">বিল / ভাড়া (Bills)</option>
+              <option value="Other">অন্যান্য (Other)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-i18n="form_phone">ফোন নম্বর (ঐচ্ছিক)</label>
+            <input type="tel" id="tx-phone" placeholder="017xxxxxxxx">
+          </div>
+        </div>
+
+        <!-- Note / Remark -->
+        <div class="form-group">
+          <label data-i18n="form_note">নোট / বিবরণ</label>
+          <textarea id="tx-note" rows="2" placeholder="কিসের জন্য ধার দেওয়া বা নেওয়া হলো..."></textarea>
+        </div>
+
+        <!-- Modal Submit Actions -->
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAddModal()" data-i18n="btn_cancel">বাতিল</button>
+          <button type="submit" class="btn-primary" id="btn-save-tx" data-i18n="btn_save">সংরক্ষণ করুন</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: PERSON LEDGER DETAILS (ব্যক্তির খাতা বিস্তারিত) -->
+  <div id="person-ledger-modal" class="modal-overlay hidden">
+    <div class="modal-drawer drawer-full">
+      <div class="modal-header">
+        <div class="person-header-profile">
+          <div class="avatar-circle-lg" id="ledger-avatar">র</div>
+          <div>
+            <h3 id="ledger-person-name">রহিম আহমেদ</h3>
+            <span class="text-muted-sm" id="ledger-person-phone">01712345678</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closePersonLedgerModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body p-0">
+        <!-- Person Net Balance Card -->
+        <div class="ledger-summary-banner" id="ledger-summary-banner">
+          <div>
+            <span class="text-xs uppercase" data-i18n="person_net_status">বর্তমান হিসাব অবস্থা</span>
+            <h2 id="ledger-net-amount" class="text-give">আমি পাবো ৳ ১,৫০০</h2>
+          </div>
+          <div class="ledger-quick-actions">
+            <!-- Settle Up Button -->
+            <button class="btn-settle" onclick="settlePersonAccount()" title="হিসাব পরিষ্কার করুন">
+              <i class="fa-solid fa-check-double"></i> <span data-i18n="btn_settle">হিসাব মেটান</span>
+            </button>
+            <!-- Send WhatsApp Reminder -->
+            <button class="btn-whatsapp" onclick="sendWhatsAppReminder()" title="হোয়াটসঅ্যাপে তাগাদা বার্তা পাঠান">
+              <i class="fa-brands fa-whatsapp"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Individual Person History List -->
+        <div class="p-3">
+          <h4 class="mb-2" data-i18n="person_history">লেনদেনের ইতিহাস</h4>
+          <div id="person-tx-history" class="transaction-list">
+            <!-- JS Populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Audio Effects (Optional Native Touch Feedback) -->
+  <script src="app.js"></script>
+</body>
+</html>
